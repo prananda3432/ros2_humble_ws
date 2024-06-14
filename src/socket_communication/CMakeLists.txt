@@ -16,13 +16,27 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/Opencv1.msg"
+  DEPENDENCIES std_msgs
+)
 
 add_executable(get_data src/get_data.cpp)
+add_executable(opencv_socket_1 src/opencv_socket_1.cpp)
+
+ament_export_dependencies(rosidl_default_runtime)
 ament_target_dependencies(get_data rclcpp std_msgs)
+ament_target_dependencies(opencv_socket_1 rclcpp std_msgs)
 
-install(TARGETS get_data
+rosidl_target_interfaces(opencv_socket_1
+  ${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+install(TARGETS 
+  get_data
+  opencv_socket_1
   DESTINATION lib/${PROJECT_NAME})
-
 
 ######
 

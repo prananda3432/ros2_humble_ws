@@ -1,5 +1,5 @@
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
+#include "socket_communication/msg/opencv1.hpp"
 #include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -10,7 +10,7 @@ using namespace std::chrono_literals;
 class SocketNode : public rclcpp::Node {
 public:
     SocketNode() : Node("socket_node") {
-        publisher_ = this->create_publisher<std_msgs::msg::String>("socket_topic", 10);
+        publisher_ = this->create_publisher<socket_communication::msg::Opencv1>("socket_topic", 10);
 
         server_socket_ = socket(AF_INET, SOCK_STREAM, 0);
         if (server_socket_ < 0) {
@@ -47,17 +47,26 @@ private:
             if (valread <= 0) {
                 break;
             }
-            auto msg = std_msgs::msg::String();
-            msg.data = buffer;
+
+            // Parse the received data
+            int data_1, data_2;
+            sscanf(buffer, "%d;%d", &data_1, &data_2);
+
+            // Create a custom message
+            auto msg = socket_communication::msg::Opencv1();
+            msg.data_flag = data_1;
+            msg.flag_condition = data_2;
+
+            // Publish the message
             publisher_->publish(msg);
-            RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", msg.data.c_str());
+            RCLCPP_INFO(this->get_logger(), "Publishing: data_1=%d, data_2=%d", msg.data_flag, msg.flag_condition);
         }
     }
 
     int server_socket_;
     int client_socket_;
     struct sockaddr_in server_address_;
-    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
+    rclcpp::Publisher<socket_communication::msg::Opencv1>::SharedPtr publisher_;
 };
 
 int main(int argc, char * argv[]) {
