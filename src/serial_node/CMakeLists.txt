@@ -17,14 +17,24 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 
 add_executable(serial_read src/serial_read.cpp)
-ament_target_dependencies(serial_read rclcpp std_msgs)
+add_executable(serial_com src/serial_com.cpp)
 
-target_link_libraries(serial_read 
+ament_target_dependencies(serial_read rclcpp std_msgs)
+ament_target_dependencies(serial_com rclcpp std_msgs)
+
+target_link_libraries(
+  serial_read
+  serialport
+)
+
+target_link_libraries(
+  serial_com
   serialport
 )
 
 install(TARGETS
   serial_read
+  serial_com
   DESTINATION lib/${PROJECT_NAME}
 )
 
