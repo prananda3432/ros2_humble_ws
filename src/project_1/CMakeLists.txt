@@ -18,16 +18,24 @@ find_package(std_msgs REQUIRED)
 find_package(socket_communication REQUIRED)
 
 add_executable(serial_opencv_trial src/serial_opencv_trial.cpp)
+add_executable(serial_opencv src/serial_opencv.cpp)
 
 ament_target_dependencies(serial_opencv_trial rclcpp std_msgs socket_communication)
+ament_target_dependencies(serial_opencv rclcpp std_msgs socket_communication)
 
 target_link_libraries(
   serial_opencv_trial
   serialport
 )
 
+target_link_libraries(
+  serial_opencv
+  serialport
+)
+
 install(TARGETS
   serial_opencv_trial
+  serial_opencv
   DESTINATION lib/${PROJECT_NAME}
 )
 
