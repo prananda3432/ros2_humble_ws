@@ -19,6 +19,10 @@ rclcpp::Subscription<socket_communication::msg::Opencv1>::SharedPtr subscription
 rclcpp::Node::SharedPtr opencv_node;
 rclcpp::Node::SharedPtr serial_node;
 
+int data_flag;
+int flag_condition;
+int warning;
+
 void setupSocket() {
     server_socket_ = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket_ < 0) {
@@ -59,7 +63,7 @@ void publishMessages() {
         msg.flag_condition = data_2;
 
         publisher_->publish(msg);
-        RCLCPP_INFO(rclcpp::get_logger("opencv_node"), "Publishing: data_1=%d, data_2=%d", msg.data_flag, msg.flag_condition);
+        //RCLCPP_INFO(rclcpp::get_logger("opencv_node"), "Publishing: data_1=%d, data_2=%d", msg.data_flag, msg.flag_condition);
     }
 }
 
@@ -78,9 +82,11 @@ void setupSerialPort() {
 }
 
 void socketTopicCallback(const socket_communication::msg::Opencv1::SharedPtr msg) {
-    RCLCPP_INFO(rclcpp::get_logger("serial_node"), "Received opencv_topic message: data_flag=%d, flag_condition=%d", msg->data_flag, msg->flag_condition);
-    std::string data_to_send = std::to_string(msg->data_flag) + ";" + std::to_string(msg->flag_condition) + "\n";
-    sp_nonblocking_write(serial_port_, data_to_send.c_str(), data_to_send.length());
+    //RCLCPP_INFO(rclcpp::get_logger("serial_node"), "Received opencv_topic message: data_flag=%d, flag_condition=%d", msg->data_flag, msg->flag_condition);
+    data_flag = msg->data_flag;
+    flag_condition = msg->flag_condition;
+    //std::string data_to_send = std::to_string(msg->data_flag) + ";" + std::to_string(msg->flag_condition) + "\n";
+    //sp_nonblocking_write(serial_port_, data_to_send.c_str(), data_to_send.length());
     //std::this_thread::sleep_for(std::chrono::seconds(1)); testing for running multi thread
 }
 
@@ -98,11 +104,35 @@ void startSerialNode() {
     setupSerialPort();
 }
 
+void thread1() {
+    if (data_flag == 2 && flag_condition == 2) {
+    warning = 3;
+    } else if (data_flag == 2 && flag_condition == 0) {
+    warning = 2;
+    } else if (data_flag == 0 && flag_condition == 2) {
+    warning = 1;
+    } else {
+    warning = 0;
+    }
+    //printf("Thread 1\n");
+}
+
+void thread2() {
+    std::string data_to_send = "C:" + std::to_string(warning) + "\n";
+    sp_nonblocking_write(serial_port_, data_to_send.c_str(), data_to_send.length());
+    //printf("      Thread 2 || %d\n", warning);
+    printf(data_to_send.c_str());
+}
+
+
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
 
     startOpencvNode();
     startSerialNode();
+
+    auto timer1 = serial_node->create_wall_timer(std::chrono::milliseconds(100), thread1);
+    auto timer2 = serial_node->create_wall_timer(std::chrono::milliseconds(1000), thread2);
 
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(serial_node);
