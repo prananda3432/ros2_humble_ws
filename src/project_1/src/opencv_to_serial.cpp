@@ -118,7 +118,7 @@ void thread1() {
 }
 
 void thread2() {
-    std::string data_to_send = "C:" + std::to_string(warning) + "\n";
+    std::string data_to_send = std::to_string(warning) + "\n";
     sp_nonblocking_write(serial_port_, data_to_send.c_str(), data_to_send.length());
     //printf("      Thread 2 || %d\n", warning);
     printf(data_to_send.c_str());
