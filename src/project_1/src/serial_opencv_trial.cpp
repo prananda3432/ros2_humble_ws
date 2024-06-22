@@ -6,6 +6,10 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <libserialport.h>
+#include <thread>
+#include <chrono>
+#include <sstream>
+#include <iomanip>
 
 using namespace std::chrono_literals;
 
@@ -61,9 +65,13 @@ private:
             msg.data_flag = data_1;
             msg.flag_condition = data_2;
 
+            // Log the current thread ID
+            std::ostringstream oss;
+            oss << "Thread ID: " << std::this_thread::get_id();
+            RCLCPP_INFO(this->get_logger(), "Publishing: data_1=%d, data_2=%d, %s", msg.data_flag, msg.flag_condition, oss.str().c_str());
+
             // Publish the message
             publisher_->publish(msg);
-            RCLCPP_INFO(this->get_logger(), "Publishing: data_1=%d, data_2=%d", msg.data_flag, msg.flag_condition);
         }
     }
 
@@ -108,6 +116,9 @@ public:
         if (serial_port_ != nullptr) {
             sp_close(serial_port_);
         }
+        if (read_thread_.joinable()) {
+            read_thread_.join();
+        }
     }
 
 private:
@@ -120,6 +131,12 @@ private:
                 sscanf(buffer, "%d", &value);
                 std_msgs::msg::Int32 msg;
                 msg.data = value;
+
+                // Log the current thread ID
+                std::ostringstream oss;
+                oss << "Thread ID: " << std::this_thread::get_id();
+                RCLCPP_INFO(this->get_logger(), "Read from serial: %d, %s", msg.data, oss.str().c_str());
+
                 publisher_->publish(msg);
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -127,9 +144,12 @@ private:
     }
 
     void socketTopicCallback(const socket_communication::msg::Opencv1::SharedPtr msg) {
+        // Log the current thread ID
+        std::ostringstream oss;
+        oss << "Thread ID: " << std::this_thread::get_id();
+        RCLCPP_INFO(this->get_logger(), "Received socket_topic message: data_flag=%d, flag_condition=%d, %s", msg->data_flag, msg->flag_condition, oss.str().c_str());
+
         // Process messages from socket_topic
-        RCLCPP_INFO(this->get_logger(), "Received socket_topic message: data_flag=%d, flag_condition=%d", msg->data_flag, msg->flag_condition);
-        // Example: Send data_flag to Arduino (replace with your logic)
         sendToArduino(msg->data_flag);
     }
 
