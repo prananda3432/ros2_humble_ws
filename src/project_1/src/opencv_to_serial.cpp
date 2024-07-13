@@ -118,7 +118,7 @@ void thread1() {
 }
 
 void thread2() {
-    std::string data_to_send = std::to_string(warning) + "\n";
+    std::string data_to_send = std::to_string(warning) + "\n"; // "1\n"
     sp_nonblocking_write(serial_port_, data_to_send.c_str(), data_to_send.length());
     //printf("      Thread 2 || %d\n", warning);
     printf(data_to_send.c_str());
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     startSerialNode();
 
     auto timer1 = serial_node->create_wall_timer(std::chrono::milliseconds(100), thread1);
-    auto timer2 = serial_node->create_wall_timer(std::chrono::milliseconds(1000), thread2);
+    auto timer2 = serial_node->create_wall_timer(std::chrono::milliseconds(500), thread2);
 
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(serial_node);
